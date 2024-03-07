@@ -9,9 +9,9 @@ import br.insper.ecommerce.produto.Produto;
 import br.insper.ecommerce.produto.ProdutoService;
 import br.insper.ecommerce.pagamento.Boleto;
 import br.insper.ecommerce.pagamento.Pix;
+import br.insper.ecommerce.pagamento.CartaoCredito;
+import br.insper.ecommerce.pagamento.CartaoDebito;
 
-
-import java.util.ArrayList;
 import java.util.Scanner;
 
 import java.time.LocalDateTime;
@@ -84,6 +84,7 @@ public class Main {
             }
 
             if (opcao.equalsIgnoreCase("7")) {
+                compra.getItens().clear();
                 System.out.println("Digite o cpf do cliente:");
                 String cpf = scanner.nextLine();
                 Cliente cliente = clienteService.buscarCliente(cpf);
@@ -108,9 +109,18 @@ public class Main {
                                 System.out.println("Digite a quantidade:");
                                 Integer quantidade = scanner.nextInt();
                                 scanner.nextLine();
-                                Item item = new Item(quantidade, produto);
-                                compra.adicionarItem(item);
-                                System.out.println("Produto adicionado com sucesso.");
+                                for (Item item : compra.getItens()) {
+                                    if (item.getProduto().getNome().equalsIgnoreCase(produto.getNome())) {
+                                        item.setQuantidade(item.getQuantidade() + quantidade);
+                                        System.out.println("Produto adicionado com sucesso.");
+                                        break;
+                                    } else {
+                                        Item itemNovo = new Item(quantidade, produto);
+                                        compra.adicionarItem(itemNovo);
+                                        System.out.println("Produto adicionado com sucesso.");
+                                        break;
+                                    }
+                                }
                             }
                         }
                         if (opcaoCompra.equalsIgnoreCase("2")) {
@@ -125,17 +135,51 @@ public class Main {
                             compra.calculaPrecoTotal();
                             System.out.println("Preço total: " + compra.getPrecoTotal());
                             System.out.println("Digite o meio de pagamento:");
+                            System.out.println("""
+                                    1 - Boleto
+                                    2 - Pix
+                                    3 - Crédito
+                                    4 - Débito
+                                    """);
                             String meioPagamento = scanner.nextLine();
-                            if (meioPagamento.equalsIgnoreCase("Boleto")) {
+                            if (meioPagamento.equalsIgnoreCase("1")) {
                                 LocalDateTime dataCompra = LocalDateTime.now();
-                                compraService.cadastrarCompra(dataCompra, compra.getPrecoTotal(), cliente, new Boleto());
+                                System.out.println("Digite o código de barras:");
+                                String codigoBarra = scanner.nextLine();
+                                compraService.cadastrarCompra(dataCompra, compra.getPrecoTotal(), cliente, new Boleto(true, dataCompra, codigoBarra));
                                 System.out.println("Compra finalizada com sucesso.");
                                 break;
                             }
 
-                            if (meioPagamento.equalsIgnoreCase("Pix")) {
+                            if (meioPagamento.equalsIgnoreCase("2")) {
                                 LocalDateTime dataCompra = LocalDateTime.now();
-                                compraService.cadastrarCompra(dataCompra, compra.getPrecoTotal(), cliente, new Pix());
+                                System.out.println("Digite a chave de origem:");
+                                String chaveOrigem = scanner.nextLine();
+                                System.out.println("Digite o QR Code:");
+                                String qrCode = scanner.nextLine();
+                                compraService.cadastrarCompra(dataCompra, compra.getPrecoTotal(), cliente, new Pix(true, dataCompra, chaveOrigem, qrCode));
+                                System.out.println("Compra finalizada com sucesso.");
+                                break;
+                            }
+
+                            if (meioPagamento.equalsIgnoreCase("3")) {
+                                LocalDateTime dataCompra = LocalDateTime.now();
+                                System.out.println("Digite o número do cartão:");
+                                String numeroCartao = scanner.nextLine();
+                                System.out.println("Digite a bandeira do cartão:");
+                                String bandeira = scanner.nextLine();
+                                compraService.cadastrarCompra(dataCompra, compra.getPrecoTotal(), cliente, new CartaoCredito(true, dataCompra, numeroCartao, bandeira));
+                                System.out.println("Compra finalizada com sucesso.");
+                                break;
+                            }
+
+                            if (meioPagamento.equalsIgnoreCase("4")) {
+                                LocalDateTime dataCompra = LocalDateTime.now();
+                                System.out.println("Digite o número do cartão:");
+                                String numeroCartao = scanner.nextLine();
+                                System.out.println("Digite a bandeira do cartão:");
+                                String bandeira = scanner.nextLine();
+                                compraService.cadastrarCompra(dataCompra, compra.getPrecoTotal(), cliente, new CartaoDebito(true, dataCompra, numeroCartao, bandeira));
                                 System.out.println("Compra finalizada com sucesso.");
                                 break;
                             }
